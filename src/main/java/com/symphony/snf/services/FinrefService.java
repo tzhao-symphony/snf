@@ -4,12 +4,14 @@ import com.symphony.snf.config.ExternalCallConfig;
 import com.symphony.snf.model.Finref;
 import com.symphony.snf.model.FinrefRequestBody;
 import com.symphony.snf.model.FinrefResponse;
+import com.symphony.snf.model.stats.FinrefStats;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -35,6 +37,10 @@ public class FinrefService {
       finrefs.put(code, finref);
     }
     return finref;
+  }
+
+  public FinrefStats getStats() {
+    return FinrefStats.builder().finrefCounts(finrefs.size()).fintags(List.copyOf(finrefs.keySet())).build();
   }
 
   private Mono<Finref> getBestFinrefMatch(String code) {

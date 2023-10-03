@@ -30,22 +30,42 @@ public class NewsService {
 
   private  FinrefService finref;
 
-  public NewsResponse fetchNews(String lastId) {
+  public NewsResponse fetchNewsSince(String lastId) {
     RestTemplate restTemplate = new RestTemplate();
 
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
     String queryParams = lastId != null ? "&last_id=" + lastId : "";
-    HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
+    HttpEntity<String> entity = new HttpEntity<>( headers);
     ResponseEntity<NewsResponse> result =
         restTemplate.exchange(NEWS_URL + queryParams, HttpMethod.GET, entity, NewsResponse.class);
-    return (NewsResponse) result.getBody();
+    return result.getBody();
   }
 
-  public List<AtomEntry> getNews(String lastId) {
+  public NewsResponse fetchNewsFrom(String fromId) {
+    RestTemplate restTemplate = new RestTemplate();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+    String queryParams = fromId != null ? "&first_id=" + fromId : "";
+    HttpEntity<String> entity = new HttpEntity<>(headers);
+    ResponseEntity<NewsResponse> result =
+        restTemplate.exchange(NEWS_URL + queryParams, HttpMethod.GET, entity, NewsResponse.class);
+    return result.getBody();
+  }
+
+  public List<AtomEntry> getNewsSince(String lastId) {
+    return getConsolidatedItems(fetchNewsSince(lastId));
+  }
+
+  public List<AtomEntry> getNewsFrom(String fromId) {
+    return getConsolidatedItems(fetchNewsFrom(fromId));
+  }
+
+  private List<AtomEntry> getConsolidatedItems(NewsResponse resp) {
     List entries = new ArrayList();
-    NewsResponse resp = fetchNews(lastId);
     List<ConsolidatedNewsItem> consolidatedNewsItems = consolidateFinrefs(resp);
 
     for (ConsolidatedNewsItem newsItem: consolidatedNewsItems) {

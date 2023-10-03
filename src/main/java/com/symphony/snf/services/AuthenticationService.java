@@ -3,7 +3,6 @@ package com.symphony.snf.services;
 
 import com.symphony.snf.config.ExternalCallConfig;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -84,8 +83,20 @@ public class AuthenticationService {
     this.renewJwt();
   }
 
+  public boolean hasSessionTokens() {
+    return StringUtils.isNotBlank(skey) && StringUtils.isNotBlank(antiCsrfToken);
+  }
+
+  public boolean areCredentialsSet() {
+    return hasSessionTokens() && StringUtils.isNotBlank(jwt);
+  }
+
   @Scheduled(fixedDelay = 4 * 60 * 1000)
   public boolean renewJwt() {
+    if (!hasSessionTokens()) {
+      System.out.println("Postponing jwt generation until session tokens are set");
+      return false;
+    }
     RestTemplate restTemplate = new RestTemplate();
 
     HttpHeaders headers = new HttpHeaders();

@@ -5,9 +5,8 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Deque;
 
 @Data
 @Builder
@@ -19,15 +18,15 @@ public class AtomFeed {
 
   String published;
 
-  AtomLink next;
-
   AtomLink previous;
 
   AtomLink current;
 
+  AtomLink next;
+
   @JacksonXmlElementWrapper(useWrapping = false)
   @JacksonXmlProperty(localName = "entry")
-  List<AtomEntry> entries;
+  Deque<AtomEntry> entries;
 
   @JacksonXmlProperty(isAttribute = true)
   String xmlns = "http://www.w3.org/2005/Atom";
