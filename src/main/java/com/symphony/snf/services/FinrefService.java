@@ -44,7 +44,6 @@ public class FinrefService {
   }
 
   private Mono<Finref> getBestFinrefMatch(String code) {
-    System.out.println(code);
     return fetchFinrefs(code).map(resp -> {
       Finref firstValue = null;
       Finref firstUsdValue = null;
@@ -56,16 +55,20 @@ public class FinrefService {
           firstUsdValue = instrument;
         }
         if ("USD".equals(instrument.getCurrency()) && "equity".equals(instrument.getKind())) {
+          System.out.println(String.format("Found perfect match for fintag %s: %s", code, instrument.getFullBbgCompTicker()));
           return instrument;
         }
 
       }
       if (firstUsdValue != null) {
+        System.out.println(String.format("Fall back to first USD match for fintag %s: %s", code, firstUsdValue.getFullBbgCompTicker()));
         return firstUsdValue;
       }
       if (firstValue != null) {
+        System.out.println(String.format("Fallback to first match for fintag %s: %s", code, firstValue.getFullBbgCompTicker()));
         return firstValue;
       }
+      System.out.println(String.format("No match found for fintag %s, using dummy object", code));
       Finref dummyValue = new Finref();
       dummyValue.setLocalCode(code);
       return dummyValue;
@@ -77,6 +80,6 @@ public class FinrefService {
         .uri("/finref/api/v1/instruments")
         .bodyValue(new FinrefRequestBody(code))
         .header("Authorization", "Bearer " + authenticationService.getJwt())
-        .header("Content-Type", "application/json").retrieve().bodyToMono(FinrefResponse.class).log();
+        .header("Content-Type", "application/json").retrieve().bodyToMono(FinrefResponse.class);
   }
 }

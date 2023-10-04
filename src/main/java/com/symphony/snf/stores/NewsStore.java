@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class NewsStore {
@@ -37,7 +38,7 @@ public class NewsStore {
 
   AuthenticationService authenticationService;
 
-  String firstPageString;
+  String firstPageString = "";
 
   AtomFeed firstPage;
 
@@ -46,6 +47,8 @@ public class NewsStore {
   Instant latestNewsTime = Instant.EPOCH;
 
   String lastNewsId;
+
+  boolean isPolling = false;
 
   @Getter
   boolean isInitialized = false;
@@ -80,69 +83,79 @@ public class NewsStore {
     return builder.build();
   }
 
-  @Scheduled(fixedDelay = 10000)
+  @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
   private void pollNews() {
     if (!authenticationService.areCredentialsSet()) {
       System.out.println("Postponing polling until credentials are set");
       return;
     }
 
-    System.out.println("Storing news");
-    LinkedList<AtomEntry> news = new LinkedList<>();
-
-    if (lastNewsId == null) {
-      int newsCount = 0;
-      String oldestNewsId = null;
-      while(newsCount < STARTING_NEWS_COUNT) {
-        List<AtomEntry> newsFrom = newsService.getNewsFrom(oldestNewsId);
-        if (newsFrom.isEmpty()) {
-          break;
-        }
-        oldestNewsId = newsFrom.get(0).getId();
-        news.addAll(0, newsFrom);
-        newsCount = news.size();
-      }
-    } else {
-      String lastId = lastNewsId;
-
-      while(true) {
-        List<AtomEntry> newsSince = newsService.getNewsSince(lastId);
-        if (newsSince.isEmpty()) {
-          break;
-        }
-        Collections.reverse(newsSince);
-        news.addAll(newsSince);
-        lastId = news.get(0).getId();
-      }
-    }
-
-    if (news.size() == 0) {
+    if (isPolling) {
       return;
     }
 
-    lastNewsId = news.getLast().getId();
+    isPolling = true;
 
-    if (firstPage == null) {
-      initNewPageAndArchiveCurrent();
-    }
+    try {
+      LinkedList<AtomEntry> news = new LinkedList<>();
 
-    boolean hasChanged = false;
-    for (AtomEntry entry: news) {
-          if (firstPage.getEntries().size() >= PAGE_SIZE) {
-            initNewPageAndArchiveCurrent();
+      if (lastNewsId == null) {
+        int newsCount = 0;
+        String oldestNewsId = null;
+        while (newsCount < STARTING_NEWS_COUNT) {
+          List<AtomEntry> newsFrom = newsService.getNewsFrom(oldestNewsId);
+          if (newsFrom.isEmpty()) {
+            break;
           }
-          firstPage.getEntries().addFirst(entry);
-          latestNewsTime = Instant.parse(entry.getPublished());
-          hasChanged =true;
-    }
+          oldestNewsId = newsFrom.get(0).getId();
+          news.addAll(0, newsFrom);
+          newsCount = news.size();
+        }
+      } else {
+        String lastId = lastNewsId;
 
-    if (hasChanged) {
-      try {
-        firstPageString = getPageAsString(firstPage);
-        this.news.put(firstPage.getId(), firstPageString);
-      } catch (JsonProcessingException e) {
-        e.printStackTrace();
+        while (true) {
+          List<AtomEntry> newsSince = newsService.getNewsSince(lastId);
+          if (newsSince.isEmpty()) {
+            break;
+          }
+          Collections.reverse(newsSince);
+          news.addAll(newsSince);
+          lastId = news.get(0).getId();
+        }
       }
+
+      if (news.size() == 0) {
+        isPolling = false;
+        return;
+      }
+
+      lastNewsId = news.getLast().getId();
+
+      if (firstPage == null) {
+        initNewPageAndArchiveCurrent();
+      }
+
+      boolean hasChanged = false;
+      for (AtomEntry entry : news) {
+        if (firstPage.getEntries().size() >= PAGE_SIZE) {
+          initNewPageAndArchiveCurrent();
+        }
+        firstPage.getEntries().addFirst(entry);
+        latestNewsTime = Instant.parse(entry.getPublished());
+        hasChanged = true;
+      }
+
+      if (hasChanged) {
+        try {
+          firstPageString = getPageAsString(firstPage);
+          this.news.put(firstPage.getId(), firstPageString);
+        } catch (JsonProcessingException e) {
+          e.printStackTrace();
+        }
+      }
+    } finally {
+      isPolling = false;
     }
   };
 

@@ -64,23 +64,27 @@ public class AuthenticationService {
     ResponseEntity<Object> response =
         restTemplate.exchange(externalCallConfig.getHost() + LOGIN_REFRESH_URL, HttpMethod.GET, entity, Object.class);
 
-    System.out.println("youhou, renewed");
+    if (response.getStatusCode().is2xxSuccessful()) {
+      System.out.println("Credential tokens successfully renewed");
 
-    var cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
-    for (var cookie: cookies) {
-      var cookieArray = cookie.split("=");
-      var cookieName = cookieArray[0].trim();
-      var cookieValue = cookieArray[1].split(";")[0].trim();
-      if (ANTI_CSRF_COOKIE.equals(cookieName)) {
-       this.setAntiCsrfToken(cookieValue);
-       System.out.println("new csrf token:" + cookieValue);
-      } else if (SKEY.equals((cookieName))) {
-        this.setSkey(cookieValue);
-        System.out.println("new skey:" + cookieValue);
+      var cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+      for (var cookie: cookies) {
+        var cookieArray = cookie.split("=");
+        var cookieName = cookieArray[0].trim();
+        var cookieValue = cookieArray[1].split(";")[0].trim();
+        if (ANTI_CSRF_COOKIE.equals(cookieName)) {
+          this.setAntiCsrfToken(cookieValue);
+        } else if (SKEY.equals((cookieName))) {
+          this.setSkey(cookieValue);
+        }
       }
+
+      this.renewJwt();
+    } else {
+      System.out.println(String.format("Failed to renew credentials with error status %s", response.getStatusCode()));
     }
 
-    this.renewJwt();
+
   }
 
   public boolean hasSessionTokens() {
@@ -110,8 +114,7 @@ public class AuthenticationService {
 
     if (response.getStatusCode().is2xxSuccessful()) {
       this.setJwt((String) response.getBody().get("access_token"));
-      System.out.println("Renewing JWT:" + response.getBody().get("access_token"));
-
+      System.out.println("Successfully renewed JWT token");
       return true;
     } else {
       return false;
