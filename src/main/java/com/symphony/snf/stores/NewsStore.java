@@ -127,9 +127,8 @@ public class NewsStore {
           }
           count++;
           System.out.println("[" + now + "] Fetched " + count + " times");
-          Collections.reverse(newsSince);
           news.addAll(newsSince);
-          lastId = news.get(0).getId();
+          lastId = news.getLast().getId();
         }
       }
 
