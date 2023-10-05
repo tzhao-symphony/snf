@@ -33,7 +33,7 @@ public class NewsService {
 
   private final String NEWS_URL = "https://pro.hammerstone.us/api/v2/feed";
 
-  private final String HAMMERSTONE_KEY = "?key=STftCRyKz4Y2CScF663aLxH";
+  private final String HAMMERSTONE_KEY = "?key=STftCRyKz4Y2CScF663aLxHk";
 
   private final String FIRST_ID = "first_id";
 
