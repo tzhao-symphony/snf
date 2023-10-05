@@ -28,9 +28,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class NewsStore {
 
-  public static final int PAGE_SIZE = 50;
+  public static final int PAGE_SIZE = 30;
 
-  public static final int STARTING_NEWS_COUNT = 100;
+  public static final int STARTING_NEWS_COUNT = 1000;
 
   Map<String, String> news = new HashMap<>();
 
@@ -99,14 +99,19 @@ public class NewsStore {
     try {
       LinkedList<AtomEntry> news = new LinkedList<>();
 
+      String now = Instant.now().toString();
+
       if (lastNewsId == null) {
         int newsCount = 0;
         String oldestNewsId = null;
+        int count = 0;
         while (newsCount < STARTING_NEWS_COUNT) {
           List<AtomEntry> newsFrom = newsService.getNewsFrom(oldestNewsId);
           if (newsFrom.isEmpty()) {
             break;
           }
+          count++;
+          System.out.println("[" + now + "] Fetched " + count + " times");
           oldestNewsId = newsFrom.get(0).getId();
           news.addAll(0, newsFrom);
           newsCount = news.size();
@@ -114,11 +119,14 @@ public class NewsStore {
       } else {
         String lastId = lastNewsId;
 
+        int count = 0;
         while (true) {
           List<AtomEntry> newsSince = newsService.getNewsSince(lastId);
           if (newsSince.isEmpty()) {
             break;
           }
+          count++;
+          System.out.println("[" + now + "] Fetched " + count + " times");
           Collections.reverse(newsSince);
           news.addAll(newsSince);
           lastId = news.get(0).getId();

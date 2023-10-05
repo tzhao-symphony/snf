@@ -20,39 +20,57 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 @Service
 @AllArgsConstructor
 public class NewsService {
 
-  private final String NEWS_URL = "https://pro.hammerstone.us/api/v2/feed?key=STftCRyKz4Y2CScF663aLxHk";
+  private final String NEWS_URL = "https://pro.hammerstone.us/api/v2/feed";
+
+  private final String HAMMERSTONE_KEY = "?key=STftCRyKz4Y2CScF663aLxH";
+
+  private final String FIRST_ID = "first_id";
+
+  private final String LAST_ID = "last_id";
 
   private  FinrefService finref;
 
   public NewsResponse fetchNewsSince(String lastId) {
-    RestTemplate restTemplate = new RestTemplate();
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-    String queryParams = lastId != null ? "&last_id=" + lastId : "";
-    HttpEntity<String> entity = new HttpEntity<>( headers);
-    ResponseEntity<NewsResponse> result =
-        restTemplate.exchange(NEWS_URL + queryParams, HttpMethod.GET, entity, NewsResponse.class);
-    return result.getBody();
+    Map<String, String> params = new HashMap<>();
+    params.put(LAST_ID, lastId);
+    return fetchNews(params);
   }
 
   public NewsResponse fetchNewsFrom(String fromId) {
+    Map<String, String> params = new HashMap<>();
+    params.put(FIRST_ID, fromId);
+    return fetchNews(params);
+  }
+
+  private NewsResponse fetchNews(Map<String, String> params) {
     RestTemplate restTemplate = new RestTemplate();
 
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-    String queryParams = fromId != null ? "&first_id=" + fromId : "";
+    StringBuilder queryParamsBuilder = new StringBuilder(HAMMERSTONE_KEY);
+    if (params != null) {
+      for (Entry<String, String> entry: params.entrySet()) {
+        queryParamsBuilder.append("&");
+        queryParamsBuilder.append(entry.getKey());
+        queryParamsBuilder.append("=");
+        queryParamsBuilder.append(entry.getValue());
+      }
+    }
+    String url = NEWS_URL + queryParamsBuilder.toString();
+    System.out.println("fetching:" + url);
     HttpEntity<String> entity = new HttpEntity<>(headers);
     ResponseEntity<NewsResponse> result =
-        restTemplate.exchange(NEWS_URL + queryParams, HttpMethod.GET, entity, NewsResponse.class);
+        restTemplate.exchange(url, HttpMethod.GET, entity, NewsResponse.class);
     return result.getBody();
   }
 
