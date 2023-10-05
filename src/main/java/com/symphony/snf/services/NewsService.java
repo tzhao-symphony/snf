@@ -10,12 +10,14 @@ import com.symphony.snf.model.atom.AtomEntry;
 import com.symphony.snf.model.atom.AtomTitle;
 
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -41,13 +43,17 @@ public class NewsService {
 
   public NewsResponse fetchNewsSince(String lastId) {
     Map<String, String> params = new HashMap<>();
-    params.put(LAST_ID, lastId);
+    if (StringUtils.isNotBlank(lastId)) {
+      params.put(LAST_ID, lastId);
+    }
     return fetchNews(params);
   }
 
   public NewsResponse fetchNewsFrom(String fromId) {
     Map<String, String> params = new HashMap<>();
-    params.put(FIRST_ID, fromId);
+    if (StringUtils.isNotBlank(fromId)) {
+      params.put(FIRST_ID, fromId);
+    }
     return fetchNews(params);
   }
 
@@ -69,9 +75,15 @@ public class NewsService {
     String url = NEWS_URL + queryParamsBuilder.toString();
     System.out.println("fetching:" + url);
     HttpEntity<String> entity = new HttpEntity<>(headers);
-    ResponseEntity<NewsResponse> result =
-        restTemplate.exchange(url, HttpMethod.GET, entity, NewsResponse.class);
-    return result.getBody();
+    try {
+      ResponseEntity<NewsResponse> result =
+          restTemplate.exchange(url, HttpMethod.GET, entity, NewsResponse.class);
+      return result.getBody();
+    } catch (RestClientException e) {
+      e.printStackTrace();
+      return new NewsResponse();
+    }
+
   }
 
   public List<AtomEntry> getNewsSince(String lastId) {
