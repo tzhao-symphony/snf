@@ -72,7 +72,7 @@ public class NewsService {
         queryParamsBuilder.append(entry.getValue());
       }
     }
-    String url = NEWS_URL + queryParamsBuilder.toString();
+    String url = NEWS_URL + queryParamsBuilder;
     System.out.println("fetching:" + url);
     HttpEntity<String> entity = new HttpEntity<>(headers);
     try {
@@ -86,33 +86,16 @@ public class NewsService {
 
   }
 
-  public List<AtomEntry> getNewsSince(String lastId) {
+  public List<ConsolidatedNewsItem> getNewsSince(String lastId) {
     return getConsolidatedItems(fetchNewsSince(lastId));
   }
 
-  public List<AtomEntry> getNewsFrom(String fromId) {
+  public List<ConsolidatedNewsItem> getNewsFrom(String fromId) {
     return getConsolidatedItems(fetchNewsFrom(fromId));
   }
 
-  private List<AtomEntry> getConsolidatedItems(NewsResponse resp) {
-    List entries = new ArrayList();
-    List<ConsolidatedNewsItem> consolidatedNewsItems = consolidateFinrefs(resp);
-
-    for (ConsolidatedNewsItem newsItem: consolidatedNewsItems) {
-      AtomAuthor author = AtomAuthor.builder().name(newsItem.getAuthor()).build();
-      AtomContent content = AtomContent.builder().type("html").value(newsItem.getHtmlMessage()).build();
-      AtomTitle title = AtomTitle.builder().type("text").value(newsItem.getMessage()).build();
-      AtomEntry entry = AtomEntry.builder()
-          .author(author)
-          .content(content)
-          .published(newsItem.getPostedAt())
-          .id(newsItem.getMsgId())
-          .title(title)
-          .stocks(newsItem.getStocks())
-          .build();
-      entries.add(entry);
-    }
-    return entries;
+  private List<ConsolidatedNewsItem> getConsolidatedItems(NewsResponse resp) {
+    return consolidateFinrefs(resp);
   }
 
   private List<ConsolidatedNewsItem> consolidateFinrefs(NewsResponse response) {

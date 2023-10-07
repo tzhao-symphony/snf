@@ -25,7 +25,7 @@ public class NewsFeedController {
 
   @GetMapping("/getFeeds")
   public ResponseEntity<String> getFeeds(@RequestParam(value = "page", required = false) String pageId) {
-    String response = newsStore.getNewsPage(pageId);
+    String response = newsStore.getNewsPageXml(pageId);
     if (response == null) {
       return ResponseEntity.notFound().build();
     }
@@ -37,4 +37,21 @@ public class NewsFeedController {
     }
     return ResponseEntity.ok().headers(responseHeaders).body(response);
   }
+
+  @GetMapping("/v1/getFeeds")
+  public ResponseEntity<String> getJsonFeeds(@RequestParam(value = "page", required = false) String pageId) {
+    String response = newsStore.getNewsPageJson(pageId);
+    if (response == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    HttpHeaders responseHeaders = new HttpHeaders();
+    responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+    if (!newsStore.isCurrent(pageId)) {
+      responseHeaders.setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
+    }
+    return ResponseEntity.ok().headers(responseHeaders).body(response);
+  }
+
+
 }

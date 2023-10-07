@@ -6,16 +6,22 @@ import com.symphony.snf.model.FinrefRequestBody;
 import com.symphony.snf.model.FinrefResponse;
 import com.symphony.snf.model.stats.FinrefStats;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class FinrefService {
+  private static long CACHE_DURATION_IN_HOURS = 10;
   private AuthenticationService authenticationService;
 
   private final WebClient webClient;
@@ -27,8 +33,23 @@ public class FinrefService {
 
   Map<String, Finref> finrefs = new HashMap<>();
 
+  Map<String, Instant> lastFinrefOccurence = new HashMap<>();
+
+  @Scheduled(fixedDelay = 4, timeUnit = TimeUnit.HOURS)
+  private void clearUnusedFinrefs() {
+    Instant now = Instant.now();
+    for (Entry<String, Instant> entry: lastFinrefOccurence.entrySet()) {
+      if (Duration.between(entry.getValue(), now).toHours() > CACHE_DURATION_IN_HOURS) {
+        String key = entry.getKey();
+        lastFinrefOccurence.remove(key);
+        finrefs.remove(key);
+      }
+    }
+  }
+
   public Finref getFinref(String code) {
     Finref finref = finrefs.get(code);
+    lastFinrefOccurence.put(code, Instant.now());
     if (finref != null) {
       return finref;
     }
@@ -48,6 +69,10 @@ public class FinrefService {
       Finref firstValue = null;
       Finref firstUsdValue = null;
       for (var instrument : resp.getInstruments()) {
+        if (!code.equals(instrument.getLocalCode())) {
+          continue;
+        }
+
         if (firstValue == null) {
           firstValue = instrument;
         }
