@@ -6,7 +6,7 @@ import com.symphony.snf.model.NewsItem;
 import com.symphony.snf.model.NewsResponse;
 
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-@Log4j2
+@Slf4j
 @Service
 @AllArgsConstructor
 public class NewsService {

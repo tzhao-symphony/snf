@@ -6,7 +6,7 @@ import com.symphony.snf.model.FinrefRequestBody;
 import com.symphony.snf.model.FinrefResponse;
 import com.symphony.snf.model.stats.FinrefStats;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-@Log4j2
+@Slf4j
 @Service
 public class FinrefService {
   private static long CACHE_DURATION_IN_HOURS = 10;
