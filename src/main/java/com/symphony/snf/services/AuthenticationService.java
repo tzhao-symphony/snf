@@ -5,6 +5,7 @@ import com.symphony.snf.config.ExternalCallConfig;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Getter
 @Setter
+@Log4j2
 public class AuthenticationService {
 
   final static private String LOGIN_REFRESH_URL = "/login/refresh_token";
@@ -65,7 +67,7 @@ public class AuthenticationService {
         restTemplate.exchange(externalCallConfig.getHost() + LOGIN_REFRESH_URL, HttpMethod.GET, entity, Object.class);
 
     if (response.getStatusCode().is2xxSuccessful()) {
-      System.out.println("Credential tokens successfully renewed");
+      log.info("Credential tokens successfully renewed");
 
       var cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
       for (var cookie: cookies) {
@@ -81,7 +83,7 @@ public class AuthenticationService {
 
       this.renewJwt();
     } else {
-      System.out.println(String.format("Failed to renew credentials with error status %s", response.getStatusCode()));
+      log.error("Failed to renew credentials with error status {}", response.getStatusCode());
     }
 
 
@@ -98,7 +100,7 @@ public class AuthenticationService {
   @Scheduled(fixedDelay = 4 * 60 * 1000)
   public boolean renewJwt() {
     if (!hasSessionTokens()) {
-      System.out.println("Postponing jwt generation until session tokens are set");
+      log.warn("Postponing jwt generation until session tokens are set");
       return false;
     }
     RestTemplate restTemplate = new RestTemplate();
@@ -114,7 +116,7 @@ public class AuthenticationService {
 
     if (response.getStatusCode().is2xxSuccessful()) {
       this.setJwt((String) response.getBody().get("access_token"));
-      System.out.println("Successfully renewed JWT token");
+      log.info("Successfully renewed JWT token");
       return true;
     } else {
       return false;

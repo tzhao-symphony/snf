@@ -6,6 +6,7 @@ import com.symphony.snf.model.FinrefRequestBody;
 import com.symphony.snf.model.FinrefResponse;
 import com.symphony.snf.model.stats.FinrefStats;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,11 +15,13 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 @Service
 public class FinrefService {
   private static long CACHE_DURATION_IN_HOURS = 10;
@@ -38,10 +41,12 @@ public class FinrefService {
   @Scheduled(fixedDelay = 4, timeUnit = TimeUnit.HOURS)
   private void clearUnusedFinrefs() {
     Instant now = Instant.now();
-    for (Entry<String, Instant> entry: lastFinrefOccurence.entrySet()) {
+    for (Iterator<Entry<String, Instant>> it = lastFinrefOccurence.entrySet().iterator(); it.hasNext();) {
+      Entry<String, Instant> entry = it.next();
       if (Duration.between(entry.getValue(), now).toHours() > CACHE_DURATION_IN_HOURS) {
+        log.info("[Finref Clean Up][{}] Removing finref {} last used at {}.", now, entry.getKey(), entry.getValue());
         String key = entry.getKey();
-        lastFinrefOccurence.remove(key);
+        it.remove();
         finrefs.remove(key);
       }
     }
@@ -80,20 +85,20 @@ public class FinrefService {
           firstUsdValue = instrument;
         }
         if ("USD".equals(instrument.getCurrency()) && "equity".equals(instrument.getKind())) {
-          System.out.println(String.format("Found perfect match for fintag %s: %s", code, instrument.getFullBbgCompTicker()));
+          log.info("Found perfect match for fintag {}: {}", code, instrument.getFullBbgCompTicker());
           return instrument;
         }
 
       }
       if (firstUsdValue != null) {
-        System.out.println(String.format("Fall back to first USD match for fintag %s: %s", code, firstUsdValue.getFullBbgCompTicker()));
+        log.warn("Fall back to first USD match for fintag {}: {}", code, firstUsdValue.getFullBbgCompTicker());
         return firstUsdValue;
       }
       if (firstValue != null) {
-        System.out.println(String.format("Fallback to first match for fintag %s: %s", code, firstValue.getFullBbgCompTicker()));
+        log.warn("Fallback to first match for fintag {}: {}", code, firstValue.getFullBbgCompTicker());
         return firstValue;
       }
-      System.out.println(String.format("No match found for fintag %s, using dummy object", code));
+      log.warn("No match found for fintag {}, using dummy object", code);
       Finref dummyValue = new Finref();
       dummyValue.setLocalCode(code);
       return dummyValue;

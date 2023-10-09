@@ -2,7 +2,6 @@ package com.symphony.snf.controllers;
 
 import com.symphony.snf.model.ServiceHealth;
 import com.symphony.snf.model.ServiceStatus;
-import com.symphony.snf.model.stats.NewsStats;
 import com.symphony.snf.model.stats.Stats;
 import com.symphony.snf.services.AuthenticationService;
 import com.symphony.snf.services.FinrefService;

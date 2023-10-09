@@ -4,12 +4,9 @@ import com.symphony.snf.model.ConsolidatedNewsItem;
 import com.symphony.snf.model.Finref;
 import com.symphony.snf.model.NewsItem;
 import com.symphony.snf.model.NewsResponse;
-import com.symphony.snf.model.atom.AtomAuthor;
-import com.symphony.snf.model.atom.AtomContent;
-import com.symphony.snf.model.atom.AtomEntry;
-import com.symphony.snf.model.atom.AtomTitle;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@Log4j2
 @Service
 @AllArgsConstructor
 public class NewsService {
@@ -73,14 +71,14 @@ public class NewsService {
       }
     }
     String url = NEWS_URL + queryParamsBuilder;
-    System.out.println("fetching:" + url);
+    log.info("fetching:" + url);
     HttpEntity<String> entity = new HttpEntity<>(headers);
     try {
       ResponseEntity<NewsResponse> result =
           restTemplate.exchange(url, HttpMethod.GET, entity, NewsResponse.class);
       return result.getBody();
     } catch (RestClientException e) {
-      e.printStackTrace();
+      log.warn("Failed to fetch news: {}", url, e);
       return new NewsResponse();
     }
 

@@ -16,6 +16,5 @@ public class FinrefRequestBody {
   FinrefRequestBody(String searchQuery, int from) {
     this(searchQuery);
     this.from = from;
-
   }
 }

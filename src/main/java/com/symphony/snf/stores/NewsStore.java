@@ -19,14 +19,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 public class NewsStore {
 
@@ -118,7 +120,7 @@ public class NewsStore {
   @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
   private void pollNews() {
     if (!authenticationService.areCredentialsSet()) {
-      System.out.println("Postponing polling until credentials are set");
+      log.warn("Postponing polling until credentials are set");
       return;
     }
 
@@ -143,7 +145,7 @@ public class NewsStore {
             break;
           }
           count++;
-          System.out.println("[" + now + "] Fetched " + count + " times");
+          log.info("[{}] Fetched {} times", now, count);
           oldestNewsId = newsFrom.get(0).getMsgId();
           news.addAll(0, newsFrom);
           newsCount = news.size();
@@ -158,7 +160,7 @@ public class NewsStore {
             break;
           }
           count++;
-          System.out.println("[" + now + "] Fetched " + count + " times");
+          log.info("[{}] Fetched {} times", now, count);
           news.addAll(newsSince);
           lastId = news.getLast().getMsgId();
         }
@@ -201,7 +203,7 @@ public class NewsStore {
           String firstPageJsonString = getPageAsString(firstPageJson);
           newsPageJson.put(firstPageJson.getId(), firstPageJsonString);
         } catch (JsonProcessingException e) {
-          e.printStackTrace();
+          log.error("Failed to parse xml page", e);
         }
       }
     } finally {
@@ -216,9 +218,11 @@ public class NewsStore {
     entries.sort(Comparator.comparing(Entry::getValue));
     for (Entry<String, Instant> entry: entries) {
       if (newsPageJson.size() * PAGE_SIZE < STARTING_NEWS_COUNT) {
+        log.info("[News Clean Up]Skipping cache clean up as only {} pages with {} news each", newsPageJson.size(), PAGE_SIZE);
         break;
       }
       if (Duration.between(entry.getValue(), now).toDays() > CACHE_DURATION_IN_DAYS) {
+        log.info("[News Clean Up][{}] Removing page {} created at {}.", now, entry.getKey(), entry.getValue());
         String key = entry.getKey();
         newsPageCreationDate.remove(key);
         newsPageJson.remove(key);
@@ -263,22 +267,22 @@ public class NewsStore {
     if (firstPageXml != null) {
       String archiveId = firstPageXml.getId();
 
-      firstPageXml.setPrevious(AtomLink.builder().rel("previous").type("application/atom+xml").href(newPageHref).build());
+      firstPageXml.setPrevious(AtomLink.builder().rel("previous").type(MediaType.APPLICATION_ATOM_XML_VALUE).href(newPageHref).build());
       try {
         newsPageXml.put(archiveId, getPageAsString(firstPageXml));
         newsPageCreationDate.put(newId, Instant.now());
       } catch (JsonProcessingException e) {
-        e.printStackTrace();
+        log.error("Failed to parse xml page", e);
       }
     }
 
     AtomFeed.AtomFeedBuilder newPageBuilder = AtomFeed.builder()
         .id(newId)
         .entries(new LinkedList<>())
-        .current(AtomLink.builder().rel("current").type("application/atom+xml").href(newPageHref).build());
+        .current(AtomLink.builder().rel("current").type(MediaType.APPLICATION_ATOM_XML_VALUE).href(newPageHref).build());
 
     if (firstPageXml != null) {
-      newPageBuilder.next(AtomLink.builder().rel("next").type("application/atom+xml").href(firstPageXml.getCurrent().getHref()).build());
+      newPageBuilder.next(AtomLink.builder().rel("next").type(MediaType.APPLICATION_ATOM_XML_VALUE).href(firstPageXml.getCurrent().getHref()).build());
     }
     AtomFeed newPage = newPageBuilder.build();
     /* XML specific processing END */
@@ -292,7 +296,7 @@ public class NewsStore {
         newsPageJson.put(archiveId, getPageAsString(firstPageJson));
         newsPageCreationDate.put(newId, Instant.now());
       } catch (JsonProcessingException e) {
-        e.printStackTrace();
+        log.error("Failed to parse json page", e);
       }
     }
 
@@ -321,7 +325,7 @@ public class NewsStore {
 
       isInitialized = true;
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      log.error("Failed to parse json page", e);
     }
   }
 
