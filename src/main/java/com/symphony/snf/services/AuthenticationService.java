@@ -82,6 +82,7 @@ public class AuthenticationService {
       }
 
       this.renewJwt();
+
     } else {
       log.error("Failed to renew credentials with error status {}", response.getStatusCode());
     }

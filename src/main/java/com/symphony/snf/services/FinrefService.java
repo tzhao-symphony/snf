@@ -27,11 +27,14 @@ public class FinrefService {
   private static long CACHE_DURATION_IN_HOURS = 10;
   private AuthenticationService authenticationService;
 
-  private final WebClient webClient;
+  private WebClient webClient;
+
+  private ExternalCallConfig externalCallConfig;
 
   FinrefService(AuthenticationService authenticationService, ExternalCallConfig externalCallConfig) {
-    webClient = WebClient.create(externalCallConfig.getHost());
+    this.externalCallConfig = externalCallConfig;
     this.authenticationService = authenticationService;
+    updateWebclient();
   }
 
   Map<String, Finref> finrefs = new HashMap<>();
@@ -112,5 +115,9 @@ public class FinrefService {
         .bodyValue(new FinrefRequestBody(code))
         .header("Authorization", "Bearer " + authenticationService.getJwt())
         .header("Content-Type", "application/json").retrieve().bodyToMono(FinrefResponse.class);
+  }
+
+  public void updateWebclient() {
+    webClient = WebClient.create(externalCallConfig.getHost());
   }
 }

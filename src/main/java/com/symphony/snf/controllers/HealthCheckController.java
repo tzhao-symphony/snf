@@ -1,5 +1,6 @@
 package com.symphony.snf.controllers;
 
+import com.symphony.snf.config.ExternalCallConfig;
 import com.symphony.snf.model.ServiceHealth;
 import com.symphony.snf.model.ServiceStatus;
 import com.symphony.snf.model.stats.Stats;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(path = "health", produces = "application/json")
+@CrossOrigin
 @AllArgsConstructor
 public class HealthCheckController {
 
@@ -25,10 +27,11 @@ public class HealthCheckController {
 
   FinrefService finrefService;
 
-  @CrossOrigin
+  ExternalCallConfig config;
+
   @GetMapping(value = "/status")
   ServiceHealth getStatus() {
-    ServiceHealth.ServiceHealthBuilder builder = ServiceHealth.builder();
+    ServiceHealth.ServiceHealthBuilder builder = ServiceHealth.builder().host(config.getHost());
     if (StringUtils.isBlank(authenticationService.getJwt())) {
       return builder.status(ServiceStatus.DOWN).message("Missing JWT").build();
     }

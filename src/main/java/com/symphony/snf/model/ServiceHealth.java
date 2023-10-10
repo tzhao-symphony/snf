@@ -9,4 +9,6 @@ public class ServiceHealth {
   private ServiceStatus status;
 
   private String message;
+
+  private String host;
 }
