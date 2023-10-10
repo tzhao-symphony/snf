@@ -2,6 +2,7 @@ package com.symphony.snf.controllers;
 
 import com.symphony.snf.config.ExternalCallConfig;
 import com.symphony.snf.services.AuthenticationService;
+import com.symphony.snf.services.FinrefService;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
   private AuthenticationService authenticationService;
+
+  private FinrefService finrefService;
 
   private ExternalCallConfig config;
 
@@ -44,6 +47,8 @@ public class AuthenticationController {
         authenticationService.setSkey(previousSkey);
         authenticationService.setAntiCsrfToken(previousCsrfToken);
         config.setHost(previousHost);
+      } else {
+        finrefService.updateWebclient();
       }
     }
   }
