@@ -216,9 +216,13 @@ public class NewsStore {
     Instant now = Instant.now();
     List<Entry<String, Instant>> entries = newsPageCreationDate.entrySet().stream().collect(Collectors.toCollection(ArrayList::new));
     entries.sort(Comparator.comparing(Entry::getValue));
+    boolean hasElement = entries.size() > 0;
+    String oldestPageId = hasElement ? entries.get(0).getKey() : null;
+    Instant oldestPageDate = hasElement ? entries.get(0).getValue() : null;
+    log.info("[News Clean Up][{}] Start ({} news) (first: {} {})", now, entries.size(), oldestPageId, oldestPageDate);
     for (Entry<String, Instant> entry: entries) {
       if (newsPageJson.size() * PAGE_SIZE < STARTING_NEWS_COUNT) {
-        log.info("[News Clean Up]Skipping cache clean up as only {} pages with {} news each", newsPageJson.size(), PAGE_SIZE);
+        log.info("[News Clean Up][{}]Skipping cache clean up as only {} pages with {} news each", now, newsPageJson.size(), PAGE_SIZE);
         break;
       }
       if (Duration.between(entry.getValue(), now).toDays() > CACHE_DURATION_IN_DAYS) {

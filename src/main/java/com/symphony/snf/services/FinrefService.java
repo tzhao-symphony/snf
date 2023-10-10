@@ -41,6 +41,7 @@ public class FinrefService {
   @Scheduled(fixedDelay = 4, timeUnit = TimeUnit.HOURS)
   private void clearUnusedFinrefs() {
     Instant now = Instant.now();
+    log.info("[Finref Clean Up][{}] Start. [{} finrefs]", now, finrefs.size());
     for (Iterator<Entry<String, Instant>> it = lastFinrefOccurence.entrySet().iterator(); it.hasNext();) {
       Entry<String, Instant> entry = it.next();
       if (Duration.between(entry.getValue(), now).toHours() > CACHE_DURATION_IN_HOURS) {
